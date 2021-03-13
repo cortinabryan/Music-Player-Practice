@@ -1,4 +1,5 @@
 import { songsList } from "../data/songs.js";
+import PlayInfo from "../modules/play-info.js";
 
 const Playlist = ((_) => {
   //data or state
@@ -7,15 +8,22 @@ const Playlist = ((_) => {
   let currentSong = new Audio(songs[currentlyPlayingIndex].url);
   let isPlaying = false;
 
+  currentSong.currentTime = 60;
+
   // cache the DOM
   const playlistEl = document.querySelector(".playlist");
+
   const init = (_) => {
     render();
     listeners();
+    PlayInfo.setState({
+      songsLength: songs.length,
+      isPlaying: !currentSong.paused,
+    });
   };
 
   const changeAudioSrc = (_) => {
-    currentSong.src = song(currentPlayingIndex).url;
+    currentSong.src = songs[currentlyPlayingIndex].url;
   };
 
   const togglePlayPause = (_) => {
@@ -32,13 +40,23 @@ const Playlist = ((_) => {
       changeAudioSrc();
       togglePlayPause();
     }
+
+    PlayInfo.setState({
+      songsLength: songs.length,
+      isPlaying: !currentSong.paused,
+    });
+  };
+
+  const playNext = (_) => {
+    if (songs[currentlyPlayingIndex + 1]) {
+      currentlyPlayingIndex++;
+      currentSong.src = songs[currentlyPlayingIndex].url;
+      togglePlayPause();
+      render();
+    }
   };
 
   const listeners = (_) => {
-    // 1. get the index of the li tag
-    // 2. change the currentplayingindex to index of the li tag
-    // 3. play or pause
-    // 4. If it's not the same song, then change the src to that new song after changing the currentplay index
     playlistEl.addEventListener("click", (event) => {
       if (event.target && event.target.matches(".fa")) {
         const listElem = event.target.parentNode.parentNode;
@@ -48,6 +66,10 @@ const Playlist = ((_) => {
         mainPlay(listElemIndex);
         render();
       }
+    });
+
+    currentSong.addEventListener("ended", (_) => {
+      playNext();
     });
   };
 
@@ -70,9 +92,9 @@ const Playlist = ((_) => {
                   <i class="fa ${toggleIcon(index)} pp-icon"></i>
                 </div>
                 <div class="playlist__song-details">
-                  <span class="playList__song-name">${songObj.title}</span>
+                  <span class="playlist__song-name">${songObj.title}</span>
                   <br />
-                  <span class="playList__song-artist">${songObj.artist}</span>
+                  <span class="playlist__song-artist">${songObj.artist}</span>
                 </div>
                 <div class="playlist__song-duration">${songObj.time}</div>
               </li>`;
